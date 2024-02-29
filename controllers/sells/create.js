@@ -7,22 +7,30 @@ async function create(req, res, next) {
 
         for (const product of req.body.products || []) {
             const searchedProduct = await Product.findOne({ code: product.code });
-
-            if (searchedProduct) {
-                if (product.stock > searchedProduct.stock) {
-                    return res.status(500).json({
-                        success: false,
-                        message: `Stock insuficiente para el producto ${searchedProduct.name}`
-                    });
-                }
-
-                await Product.findOneAndUpdate(
-                    { code: product.code },
-                    { stock: searchedProduct.stock - product.stock }
-                );
-
-                totalValue += Number(product.price);
+            if (!searchedProduct) {
+                return res.status(404).json({
+                    success: false,
+                    message: `No se encontro el producto ${product.name}`
+                });
             }
+        }
+
+        for (const product of req.body.products || []) {
+            const searchedProduct = await Product.findOne({ code: product.code });
+            
+            if (product.stock > searchedProduct.stock) {
+                return res.status(500).json({
+                    success: false,
+                    message: `Stock insuficiente para el producto ${searchedProduct.name}`
+                });
+            }
+
+            await Product.findOneAndUpdate(
+                { code: product.code },
+                { stock: searchedProduct.stock - product.stock }
+            );
+
+            totalValue += Number(product.price);
         }
 
         req.body.totalValue = totalValue;
